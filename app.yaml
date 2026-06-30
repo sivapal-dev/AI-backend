@@ -1,0 +1,13 @@
+runtime: python313
+entrypoint: gunicorn main:app --workers 2 --threads 8 --bind :8080
+instance_class: F2
+automatic_scaling:
+  min_instances: 1
+  max_instances: 10
+  target_cpu_utilization: 0.7
+env_variables:
+  FRONTEND_URL: ""
+  MONGODB_URI: ""
+  JWT_SECRET: ""
+  REDIS_HOST: ""
+  REDIS_PASSWORD: ""

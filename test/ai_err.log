@@ -1,0 +1,13 @@
+INFO:     Started server process [9480]
+INFO:     Waiting for application startup.
+2026-05-11 23:39:12,714 - database - INFO - Connected to MongoDB: by8flow
+2026-05-11 23:39:17,562 - database - INFO - MongoDB indexes ensured
+2026-05-11 23:39:17,568 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-11 23:39:17,568 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-11 23:39:17,569 - scheduler - INFO - Registered daily check-in jobs for 09:25 AM and 05:15 PM IST
+2026-05-11 23:39:17,571 - apscheduler.scheduler - INFO - Added job "_send_morning_checkins_job" to job store "default"
+2026-05-11 23:39:17,571 - apscheduler.scheduler - INFO - Added job "_send_evening_checkins_job" to job store "default"
+2026-05-11 23:39:17,571 - apscheduler.scheduler - INFO - Scheduler started
+2026-05-11 23:39:17,572 - main - INFO - Scheduler started
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
