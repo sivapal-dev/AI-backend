@@ -35,6 +35,8 @@ class RedisClient:
 
 redis_client = RedisClient()
 
+import asyncio
+
 async def connect_redis() -> None:
     """Initialize Redis connection (called at app lifespan startup).
 
@@ -51,6 +53,8 @@ async def connect_redis() -> None:
         redis_client.client = redis.from_url(
             connection_url,
             decode_responses=True,
+            socket_connect_timeout=5,
+            socket_timeout=5,
         )
     else:
         # Build URL from individual parts (local dev / custom Redis)
@@ -66,10 +70,13 @@ async def connect_redis() -> None:
             username=settings.redis_username,
             password=settings.redis_password or None,
             decode_responses=True,
+            socket_connect_timeout=5,
+            socket_timeout=5,
         )
 
     try:
-        await redis_client.client.ping()
+        # Wrap ping in 5-second asyncio timeout to guarantee no hangs during DNS or connect
+        await asyncio.wait_for(redis_client.client.ping(), timeout=5.0)
         logger.info("[Redis] Successfully connected (ping OK).")
     except Exception as e:
         logger.warning(

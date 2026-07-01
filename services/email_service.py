@@ -354,7 +354,7 @@ class EmailService:
     async def _send_via_smtp_once(
         self, message: EmailMessage, to_email: str, attempt: int
     ) -> Tuple[bool, Optional[str]]:
-        """Single SMTP attempt with full step-by-step diagnostic logging."""
+        """Single SMTP attempt with full step-by-step diagnostic logging and leak prevention."""
         logger.info(
             f"[Email/SMTP] Attempt {attempt} │ "
             f"Connecting to {self.smtp_host}:{self.smtp_port} │ "
@@ -366,20 +366,16 @@ class EmailService:
             hostname=self.smtp_host,
             port=self.smtp_port,
             use_tls=self.smtp_use_tls,
+            start_tls=self.smtp_start_tls,
             timeout=self.smtp_timeout,
         )
 
         try:
             logger.info(f"[Email/SMTP] Step 1/5 │ Opening TCP connection to {self.smtp_host}:{self.smtp_port}...")
             await smtp_client.connect()
-            logger.info(f"[Email/SMTP] Step 1/5 │ ✓ TCP connection established.")
+            logger.info(f"[Email/SMTP] Step 1/5 │ ✓ TCP connection established (TLS upgrade auto-handled).")
 
-            if self.smtp_start_tls:
-                logger.info("[Email/SMTP] Step 2/5 │ Initiating STARTTLS upgrade...")
-                await smtp_client.starttls()
-                logger.info("[Email/SMTP] Step 2/5 │ ✓ STARTTLS upgrade complete.")
-            else:
-                logger.info("[Email/SMTP] Step 2/5 │ Skipped STARTTLS (use_tls=True or not required).")
+            logger.info(f"[Email/SMTP] Step 2/5 │ Verified TLS status (using_tls={smtp_client.is_encrypted}).")
 
             if self.smtp_user and self.smtp_password:
                 logger.info(f"[Email/SMTP] Step 3/5 │ Authenticating as {self.smtp_user}...")
@@ -408,10 +404,6 @@ class EmailService:
                 f"Traceback:\n{tb}"
             )
             logger.error(f"[Email/SMTP] ✗ Timeout │ {err}")
-            try:
-                await smtp_client.quit()
-            except Exception:
-                pass
             return False, err
 
         except SMTPConnectError as e:
@@ -443,10 +435,6 @@ class EmailService:
                 f"Traceback:\n{tb}"
             )
             logger.error(f"[Email/SMTP] ✗ SMTP error │ {err}")
-            try:
-                await smtp_client.quit()
-            except Exception:
-                pass
             return False, err
 
         except OSError as e:
@@ -468,11 +456,18 @@ class EmailService:
                 f"Traceback:\n{tb}"
             )
             logger.exception(f"[Email/SMTP] ✗ Unexpected error │ {err}")
-            try:
-                await smtp_client.quit()
-            except Exception:
-                pass
             return False, err
+        
+        finally:
+            # Prevent connection and socket leaks by making sure smtp_client is closed
+            try:
+                if smtp_client.is_connected:
+                    await smtp_client.quit()
+            except Exception:
+                try:
+                    smtp_client.close()
+                except Exception:
+                    pass
 
     async def _send_via_smtp(
         self, message: EmailMessage, to_email: str
