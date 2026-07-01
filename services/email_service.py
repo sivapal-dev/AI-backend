@@ -375,7 +375,7 @@ class EmailService:
             await smtp_client.connect()
             logger.info(f"[Email/SMTP] Step 1/5 │ ✓ TCP connection established (TLS upgrade auto-handled).")
 
-            logger.info(f"[Email/SMTP] Step 2/5 │ Verified TLS status (using_tls={smtp_client.is_encrypted}).")
+            logger.info(f"[Email/SMTP] Step 2/5 │ Verified TLS status (using_tls={self.smtp_use_tls or self.smtp_start_tls}).")
 
             if self.smtp_user and self.smtp_password:
                 logger.info(f"[Email/SMTP] Step 3/5 │ Authenticating as {self.smtp_user}...")
